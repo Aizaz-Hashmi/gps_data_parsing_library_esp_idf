@@ -27,7 +27,7 @@ The `gps_data_parser` component processes GPS data packets received via UART, ex
 
 ### `gps_data_parser` Function Definition
 
-The `gps_data_parser` function is responsible for parsing GPS data packets received via UART, specifically focusing on GGA sentences. This function processes the input stream and extracts relevant GPS data such as time, latitude, longitude, and altitude.
+The `gps_data_parser`  function is responsible for parsing GPS data packets received via UART, specifically focusing on GGA sentences. This function processes the input stream and extracts relevant GPS data such as time, latitude, longitude, and altitude.
 
 #### Step 1: Input Validation
 
@@ -41,13 +41,37 @@ Upon receiving an input string (`uart_stream`), the function first validates the
 Here is the information formatted as requested:
 
 Checking Stream Validity and Extracting GGA Sentence
-Upon receiving an input UART stream, the function checks if the stream is valid and contains a valid GGA sentence using the function gga_sentence_format_validity_check.
+Upon receiving an input UART stream, the function checks if the stream is valid and contains a valid GGA sentence using the function `gga_sentence_format_validity_check`.
 
-# Extracting GGA Sentence:
+##### 1. Extracting GGA Sentence:
 - If a valid GGA sentence is found, the function extracts the GGA sentence from the UART stream and stores it in a temporary buffer.
 Processing and Handling Default Values
 
-# Processing Extracted GGA Sentence:
+##### 2. Processing Extracted GGA Sentence:
 - Parsing logic can be added to process the extracted GGA sentence from the temporary buffer.
-# Handling Invalid Stream:
+
+##### 3. Handling Invalid Stream:
 - If no valid GGA sentence is found or the UART stream is invalid, the function initializes the gps_data variable with default values such as "N/A".
+
+#### Step 3: checksum verification for data integrity
+This process ensures that the data packet has not been corrupted during transmission and that the GPS data can be trusted for further processing. Implementing checksum evaluation verification is crucial for maintaining the reliability of GPS data parsing in your application.
+##### Initialization:
+- Initialize the calculated checksum variable (calculated_checksum) to zero.
+
+##### Iterate Through Sentence:
+- Start iteration from the character after $ until the character before * or the end of the sentence ('\0').
+- Compute the XOR operation for each character in the range to calculate the checksum.
+
+##### Check for Asterisk:
+- Ensure the iteration ends at the asterisk (*).
+- If the asterisk is not found, return 0 (invalid checksum).
+
+##### Extract Expected Checksum:
+- After finding the asterisk, move past it to extract the expected checksum, which is represented as a hexadecimal string of two characters.
+
+##### Parse Expected Checksum:
+- Parse the expected checksum using sscanf to convert the hexadecimal string to an integer.
+##### Compare Checksums:
+- Compare the calculated checksum with the expected checksum.
+Return 1 if they match (valid checksum), otherwise return 0 (invalid checksum).
+

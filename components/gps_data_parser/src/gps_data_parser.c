@@ -17,6 +17,8 @@ static int s_crfl = 0;// static variable to hold index of \r\n in valid GPGGA se
 static int check_stream_validity(const char *uart_stream);
 
 static int gga_sentence_format_validity_check(const char *uart_stream);
+
+static int check_sum_evaluation(const char *sentence);
 /**
  * @brief Parses a UART stream to extract GPS data.
  *
@@ -30,19 +32,51 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
     // Check if the UART stream is valid
     if (!(check_stream_validity(uart_stream)))
     {
-        // process stream if it is not null or empty
+         // process stream if it is not null or empty
     	 int index = gga_sentence_format_validity_check(uart_stream);
 
-    	      if (index != -1)
+    	      if (index != -1)    // if NMEA sentence is a valid GPGGA sentence then execute this if block code
     	      {
 
-    	    	 unsigned int length = s_crfl - index;
-    	    	 char temp[length + 1];  // Added 1 for the null terminator
+    	    	  unsigned int length = s_crfl - index;
+    	    	  char temp[length + 1]; 					   // Added 1 for the null terminator
 
-    	    	 strncpy(temp, uart_stream + index, length);  // Copy portion of uart_stream to temp
-    	          temp[length] = '\0';  // Ensure null termination
+    	    	  strncpy(temp, uart_stream + index, length);   // Copy portion of uart_stream to temp
+    	          temp[length] = '\0';  					   // Ensure null termination
+    	          int x = check_sum_evaluation(temp);       // calling checksum function to check integrity of data in GPGGA sentence
+    	             	if (x == 1) {
 
-    	      }
+    	             		// Array to hold pointers to each field
+    	             		char *fields[15];
+    	             		int field_count = 0;
+
+    	             		// Initialize a pointer for the start of each field
+    	             		char *start = temp;
+    	             		char *end = temp;
+
+    	             		// Iterate through the string and find each field
+    	             		while (*end != '\0' && field_count < 15) {
+    	             		    if (*end == ',') {
+    	             		         // Terminate the current field with a null character
+    	             		        *end = '\0';
+    	             		        // Store the start of the field in the fields array
+    	             		        fields[field_count] = start;
+    	             		        field_count++;
+
+    	             		        // Move the start pointer to the character after the comma
+    	             		        start = end + 1;
+    	             		    }
+    	             		    	// Move to the next character
+    	             		    end++;
+    	             		}
+
+    	             		// Handle the last field if there was no trailing comma
+    	             		if (start < end && field_count < 20) {
+    	             		    fields[field_count] = start;
+    	             		    field_count++;
+    	             		}
+
+    	             	}
     	      else
     	      {
 
@@ -64,8 +98,10 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
     	  sprintf(gps_data.altitude, "N/A");
     }
 
+    }
     // Return the GPS data structure (either populated or default)
     return gps_data;
+
 }
 
 /**
@@ -137,4 +173,42 @@ int gga_sentence_format_validity_check (const char *uart_stream)
     }
     }
     return -1; // Return -1 if the GGA sentence is not found
+}
+
+/**
+ * @brief Evaluates the checksum of an NMEA sentence.
+ *
+ * @param sentence The input NMEA sentence to evaluate.
+ * @return Returns 1 if the calculated checksum matches the expected checksum (valid), otherwise returns 0 (invalid).
+ */
+int check_sum_evaluation(const char *sentence) {
+    // Initialize the calculated checksum variable
+    unsigned char calculated_checksum = 0;
+    int index = 0;
+
+    // Iterate over the sentence starting after '$' until '*' or end of string
+    // Calculate the checksum using XOR operation
+    for (index = 1; sentence[index] != '*' && sentence[index] != '\0'; index++) {
+        calculated_checksum ^= sentence[index];
+    }
+
+    // Check if we reached the end of the sentence without finding '*'
+    // Return 0 if '*' was not found, indicating invalid checksum
+    if (sentence[index] != '*') {
+        return 0;
+    }
+
+    // Move past the asterisk to the expected checksum part of the sentence
+    const char *checksum_ptr = sentence + index + 1;
+
+    // Parse the expected checksum from the sentence (2 hex digits)
+    unsigned int expected_checksum;
+    if (sscanf(checksum_ptr, "%2X", &expected_checksum) != 1) {
+        // Return 0 if the expected checksum could not be parsed successfully
+        return 0;
+    }
+
+    // Compare calculated checksum with expected checksum
+    // Return 1 if they match (valid checksum), otherwise return 0 (invalid checksum)
+    return calculated_checksum == expected_checksum ? 1 : 0;
 }
