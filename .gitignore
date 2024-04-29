@@ -1,0 +1,11 @@
+# Build directory
+build/
+
+# Eclipse project files and settings
+.cproject
+.project
+.settings/
+
+# SDK configuration file
+sdkconfig
+
