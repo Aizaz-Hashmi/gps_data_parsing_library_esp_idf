@@ -13,3 +13,12 @@ The `gps_data_parser` component processes GPS data packets received via UART, ex
 
 - The `gps_data_parser.c` source file is registered in the component folder's `CMakeLists.txt`.
 - The main folder's `CMakeLists.txt` specifies the requirement for the `gps_data_parser` component for proper integration.
+
+
+
+
+### Declaration of Structure and Function in `gps_data_parser.h` Header File
+
+- The `gps_data_parse_t` structure has been declared to store GPS data, such as time, latitude, longitude, and altitude. This structure serves as a comprehensive data container for parsed GPS information, facilitating easy access and processing in your application.
+
+- Additionally, the `gps_data_parser` function has been declared. This function takes an NMEA packet (UART stream) as input and returns a `gps_data_parse_t` structure populated with parsed GPS data. It can be called from the main function or any other part of your code, providing a straightforward way to process GPS data and integrate it into your application.
