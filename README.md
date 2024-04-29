@@ -36,3 +36,18 @@ Upon receiving an input string (`uart_stream`), the function first validates the
 - If the input stream is invalid (i.e., `NULL`), the function will return default values for `time`, `longitude`, `latitude`, and `altitude` (such as "N/A" or zero), depending on your preference.
 - By verifying the input early and returning default values if necessary, the function handles invalid input gracefully, ensuring predictable behavior even in the presence of invalid input.
 
+#### Step 2: GPGGA Sentence Validation
+
+Here is the information formatted as requested:
+
+Checking Stream Validity and Extracting GGA Sentence
+Upon receiving an input UART stream, the function checks if the stream is valid and contains a valid GGA sentence using the function gga_sentence_format_validity_check.
+
+# Extracting GGA Sentence:
+- If a valid GGA sentence is found, the function extracts the GGA sentence from the UART stream and stores it in a temporary buffer.
+Processing and Handling Default Values
+
+# Processing Extracted GGA Sentence:
+- Parsing logic can be added to process the extracted GGA sentence from the temporary buffer.
+# Handling Invalid Stream:
+- If no valid GGA sentence is found or the UART stream is invalid, the function initializes the gps_data variable with default values such as "N/A".
