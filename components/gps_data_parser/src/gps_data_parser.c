@@ -10,6 +10,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+
 #include "gps_data_parser.h"
 
 static int s_crfl = 0;// static variable to hold index of \r\n in valid GPGGA sentence
@@ -19,6 +22,14 @@ static int check_stream_validity(const char *uart_stream);
 static int gga_sentence_format_validity_check(const char *uart_stream);
 
 static int check_sum_evaluation(const char *sentence);
+
+static int is_valid_direction(char direction);
+
+static int is_valid_time(const char *time);
+
+static int is_valid_numeric(const char *str,int expected_length);
+
+static int is_valid_altitude(const char *str);
 /**
  * @brief Parses a UART stream to extract GPS data.
  *
@@ -76,6 +87,62 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
     	             		    field_count++;
     	             		}
 
+    	            		if (field_count == 15) {
+    	            		    // Extract and format the time
+    	            		    if (!is_valid_time(fields[1])) {
+    	            		        // If the time field is invalid, print "N/A"
+    	            		        sprintf(gps_data.time, "N/A");
+    	            		    }
+    	            		    else {
+    	            		        // Format the time as HH:MM:SS.SSS directly using sprintf
+    	            		        sprintf(gps_data.time, "%.2s:%.2s:%.6s", fields[1], fields[1] + 2, fields[1] + 4);
+    	            		    }
+
+    	            		    // Extract and format the latitude
+    	            		    if (!is_valid_numeric(fields[2],4) || !is_valid_direction(fields[3][0])) {
+    	            		        // If the latitude or direction fields are invalid, print "N/A"
+    	            		        sprintf(gps_data.latitude, "N/A");
+    	            		    }
+    	            		    else {
+    	            		        double latitude = atof(fields[2]);
+    	            		        char direction = fields[3][0]; // N or S
+    	            		        // Convert latitude from degrees/minutes to degrees and fractional minutes
+    	            		        int degrees = (int)(latitude / 100);
+    	            		        double minutes = latitude - (degrees * 100);
+    	            		        // Format the latitude as required (e.g., "12 55.7174 N")
+    	            		        sprintf(gps_data.latitude, "%02d %.4f %c", degrees, minutes, direction);
+    	            		    }
+
+    	            		    // Extract and format the longitude
+    	            		    if (!is_valid_numeric(fields[4],5) || !is_valid_direction(fields[5][0])) {
+    	            		        // If the longitude or direction fields are invalid, print "N/A"
+    	            		        sprintf(gps_data.longitude, "N/A");
+    	            		    }
+    	            		    else {
+    	            		        double longitude = atof(fields[4]);
+    	            		        char direction = fields[5][0]; // E or W
+    	            		        // Convert longitude from degrees/minutes to degrees and fractional minutes
+    	            		        int degrees = (int)(longitude / 100);
+    	            		        double minutes = longitude - (degrees * 100);
+    	            		        // Format the longitude as required (e.g., "077 37.2052 E")
+    	            		        sprintf(gps_data.longitude, "%03d %.4f %c", degrees, minutes, direction);
+    	            		    }
+
+    	            		    // Extract and format the altitude
+    	            		    if (!is_valid_altitude(fields[9]) || fields[10][0] == '\0') {
+    	            		        // If the altitude or unit fields are invalid, print "N/A"
+    	            		        sprintf(gps_data.altitude, "N/A");
+    	            		    }
+    	            		    else {
+    	            		        double altitude = atof(fields[9]); // Parse the altitude from the 10th field (index 9)
+    	            		        char unit = fields[10][0]; // Get the altitude unit from the 11th field (index 10)
+    	            		        // Format the altitude as required (e.g., "333.2 M")
+    	            		        sprintf(gps_data.altitude, "%.2f %c", altitude, unit);
+    	            		    }
+    	            		}
+    	            	}
+
+
     	             	}
     	      else
     	      {
@@ -98,7 +165,7 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
     	  sprintf(gps_data.altitude, "N/A");
     }
 
-    }
+
     // Return the GPS data structure (either populated or default)
     return gps_data;
 
@@ -212,3 +279,104 @@ int check_sum_evaluation(const char *sentence) {
     // Return 1 if they match (valid checksum), otherwise return 0 (invalid checksum)
     return calculated_checksum == expected_checksum ? 1 : 0;
 }
+
+/**
+ * @brief Validates a string to ensure it consists of digits and a decimal point.
+ *
+ * This function checks whether a given string contains only digits and at most one decimal point.
+ * It also ensures that the length of the string up to the first decimal point matches the expected length.
+ *
+ * @param str The string to validate.
+ * @param expected_length The expected length of the string up to the first decimal point.
+ * @return int Returns 1 if the string is valid, otherwise returns 0.
+ */
+ int is_valid_numeric(const char *str, int expected_length) {
+     // Initialize variables to track the number of dots and the length of the string
+     int dot_count = 0;
+     int length = 0;
+     int d_length = 0;
+
+     // Iterate through the string
+     while (*str) {
+         // Check if the current character is not a digit
+         if (!isdigit((int)*str)) {
+             // Check if the character is a dot and if no dot has been found yet
+             if (*str == '.' && dot_count == 0) {
+            	 d_length = length;
+                 dot_count++;
+             } else {
+                 // If the character is neither a digit nor a valid dot, return 0 (invalid)
+                 return 0;
+             }
+         }
+         // Increment the length counter
+         length++;
+         // Move to the next character
+         str++;
+     }
+     // Check if the length of the numeric string matches the expected length
+     if (d_length != expected_length) {
+         return 0; // Invalid length
+     }
+
+     // Return 1 if all characters are valid and length is correct
+     return 1;
+}
+ /**
+  * @brief Validates an altitude string.
+  *
+  * This function checks whether a given string represents a valid altitude.
+  * A valid altitude string contains only numeric characters and at most one dot ('.').
+  *
+  * @param str The string to validate.
+  * @return int Returns 1 if the string is a valid altitude, 0 otherwise.
+  */
+
+ static int is_valid_altitude(const char *str)
+{
+	 // Initialize variable to track the number of dots
+	     int dot_count = 0;
+	     // Iterate through the string
+	     while (*str) {
+	         // Check if the current character is not a digit
+	         if (!isdigit((int)*str)) {
+	             // Check if the character is a dot and if no dot has been found yet
+	             if (*str == '.' && dot_count == 0) {
+
+	                 dot_count++;
+	             } else {
+	                 // If the character is neither a digit nor a valid dot, return 0 (invalid)
+	                 return 0;
+	             }
+	         }
+
+	         // Move to the next character
+	         str++;
+	     }
+	   // Return 1 if all characters are valid and length is correct
+	     return 1;
+
+}
+
+
+ // Function to validate a time field in HHMMSS.SSS format
+ int is_valid_time(const char *time) {
+     for (int i = 0; i < 8; i++) {
+         if (i == 6) {
+             if (time[i] != '.') return 0; // Time should have a decimal point at position 6
+         } else if (!isdigit((int)time[i])) {
+             return 0; // Invalid character found
+         }
+     }
+     return 1; // Valid time format
+}
+
+ // Function to check if a string is a valid compass direction (N, S, E, W)
+ int is_valid_direction(char direction) {
+     return (direction == 'N' || direction == 'S' || direction == 'E' || direction == 'W');
+}
+
+
+
+
+
