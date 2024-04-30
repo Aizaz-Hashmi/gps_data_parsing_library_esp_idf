@@ -47,7 +47,7 @@ int app_main() {
     test(stream3,3);
     sleep(1);
 
-    const char *stream4 = "$GPRMC,092750.000,A,5321.6802,N,00630.3372,W,0.02,31.66,280511,,,A*43\r\n                     	$GPGGA,092751.000,5321.6802,N,00630.3371,W,1,8,1.03,61.7,M,55.3,M,,*75\r\n";// actual packet sample sent by  GPS module to mcu through UART
+    const char *stream4 = "$GPRMC,092750.000,A,5321.6802,N,00630.3372,W,0.02,31.66,280511,,,A*43\r\n$GPGGA,092751.000,5321.6802,N,00630.3371,W,1,8,1.03,61.7,M,55.3,M,,*75\r\n";// actual packet sample sent by  GPS module to mcu through UART
     test(stream4,4);
     sleep(1);
 
@@ -55,7 +55,7 @@ int app_main() {
      test(stream5,5);
      sleep(1);
 
-   // Now testing when when stream is valid , and it is NMEA sentence and even checksum result is true but some data parameters are missing
+   // Now testing  when stream is valid , and it is NMEA sentence and even checksum result is true but some data parameters are missing
    // when time parameter is missing due to some issue but checksum attached with is without time field empty so checksum will be true
      const char * stream6 = "$GPGGA,,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*61\r\n"; // time is missing
      test(stream6,6);
@@ -70,7 +70,7 @@ int app_main() {
      test(stream9,9);
      sleep(1);
 
-     const char * stream10 = "$GPGGA,123456.235,aaaa1as7,N,,W,1,8,1.03,61.7,M,55.2,M,,*51\r\n"; // latitude data corrupted
+     const char * stream10 = "$GPGGA,123456.235,aaaa1as7,N,,W,1,8,1.03,61.7,M,55.2,M,,*51\r\n"; // latitude longitude data corrupted
      test(stream10,10);
      sleep(1);
      const char * stream11 = ",,,$$%%&^*(*(@,,,,4531313372,W,0.02,31.66,280511,,,A*43\r\n$GPGGA,065551.680,5321.6802,S,00630.3371,E,1,85,,,,554.3,M,,*30\r\n$GPGSA,A,3,10,07,05##(())(,1.38*0A\r%^&*()_+n$GPGSV,,./??3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70\r";//highly corrupted stream

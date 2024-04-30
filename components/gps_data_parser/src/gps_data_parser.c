@@ -301,11 +301,26 @@ int check_sum_evaluation(const char *sentence) {
  * @param expected_length The expected length of the string up to the first decimal point.
  * @return int Returns 1 if the string is valid, otherwise returns 0.
  */
- int is_valid_numeric(const char *str, int expected_length) {
+int is_valid_numeric(const char *str, int expected_length) {
      // Initialize variables to track the number of dots and the length of the string
      int dot_count = 0;
      int length = 0;
      int d_length = 0;
+     char output1[4] = {0};
+     char output2[3] = {0};
+     int value = 0;
+     if (expected_length == 5)
+     {
+        sprintf(output1,"%.3s", str);
+        value = atoi(output1);
+
+     }
+     if (expected_length == 4)
+     {
+        sprintf(output2,"%.2s", str);
+         value = atoi(output2);
+
+     }
 
      // Iterate through the string
      while (*str) {
@@ -330,10 +345,19 @@ int check_sum_evaluation(const char *sentence) {
          return 0; // Invalid length
      }
 
+     if((value >180) && (expected_length == 5))
+       {
+           return 0;
+       }
+
+     if((value >90) && (expected_length == 4))
+       {
+           return 0;
+       }
+
      // Return 1 if all characters are valid and length is correct
      return 1;
-}
- /**
+} /**
   * @brief Validates an altitude string.
   *
   * This function checks whether a given string represents a valid altitude.
@@ -387,23 +411,46 @@ static int is_valid_altitude(const char *str) {
 
 
  // Function to validate a time field in HHMMSS.SSS format
- int is_valid_time(const char *time) {
-     for (int i = 0; i < 8; i++) {
-         if (i == 6) {
-             if (time[i] != '.') return 0; // Time should have a decimal point at position 6
-         } else if (!isdigit((int)time[i])) {
-             return 0; // Invalid character found
-         }
-     }
-     return 1; // Valid time format
+
+int is_valid_time(const char *time) {
+    // First, check if the time format is valid and all characters are digits
+    for (int i = 0; i < 7; i++) {
+        if (i == 6) {
+            if (time[i] != '.') {
+                return 0; // Time should have a decimal point at position 6
+            }
+        } else if (!isdigit((int)time[i])) {
+            return 0; // Invalid character found
+        }
+    }
+
+    // Parse hours, minutes, seconds from the time string
+   char hr_str[3], min_str[3], sec_str[3];
+
+    strncpy(hr_str, time, 2);
+    strncpy(min_str, time + 2, 2);
+    strncpy(sec_str, time + 4, 2);
+
+    hr_str[2] = min_str[2] = sec_str[2]  = '\0';
+
+    int hr = atoi(hr_str);
+    int min = atoi(min_str);
+    int sec = atoi(sec_str);
+
+    // Validate the parsed values
+    if (hr > 23 || min > 59 || sec > 59)
+        return 0;
+    // All checks passed, return 1 indicating the time is valid
+    return 1;
 }
+
+
 
  // Function to check if a string is a valid compass direction (N, S, E, W)
  int is_valid_direction(char direction) {
      return (direction == 'N' || direction == 'S' || direction == 'E' || direction == 'W');
 }
 
-#include <string.h>  // Include this for strncpy
 
 // Function to set default values for gps_data_parse_t structure
 void print_default_value(gps_data_parse_t* data) {

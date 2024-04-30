@@ -33,23 +33,7 @@ static void print_banner(const char* text)
  */
 void app_main(void)
 {
-    // Executing a specific test case by its name
-    print_banner("Executing one test for GPS data parsing by its name");
-    UNITY_BEGIN();
-    unity_run_test_by_name("Wrong Sentence Identifier");
-    UNITY_END();
 
-    // Executing a specific test case by its name
-    print_banner("Running GPS data parsing test for a valid GPGGA sentence");
-    UNITY_BEGIN();
-    unity_run_test_by_name("Valid GPGGA Sentence");
-    UNITY_END();
-
-    // Executing a specific test case by its name
-    print_banner("Running GPS data parsing test for an invalid sentence");
-    UNITY_BEGIN();
-    unity_run_test_by_name("Invalid sentence");
-    UNITY_END();
 
     // Running all registered tests
     print_banner("Running all registered tests for GPS data parsing");

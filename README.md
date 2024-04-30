@@ -159,3 +159,91 @@ To incorporate target-based tests for testing this library , we can create a cen
 -  In `ESP-IDF Termianl`goto test root directory by typing the `cd project/test` use `idf.py build` to build all the files that are to be built. use `idf.py -p COMx flash monitor` to see test results as PASS or FAIL and in `test/main/gps_data_parsing_library_test.c` it has `unity.h`  header file which is necessary to use run our tests. UNIT TEST is a frame wrork provided by UNITY. Most of its files are in `assembly` because they directly communicate with target hardware.
 -  use `unity_run_menu` to run the test cases in the form of a menu and it is upto you which test you want to run and see results.
 -  If all tests results are PASS then library can be considerd reliable with no loop holes.
+
+
+### Test Cases
+
+The project includes the following test cases:
+
+1. **Valid GPGGA Sentence**: Tests the parser's ability to handle a valid GPGGA packet and extract the expected GPS data fields.
+
+2. **Incorrect Sentence Identifier**: Verifies that the parser discards packets with invalid sentence identifiers and returns "N/A" for all fields.
+
+3. **GGA Sentence with Missing Parameters**: Ensures the parser can handle packets with missing fields and assigns "N/A" values to missing data.
+
+4. **Empty Sentence**: Tests the parser's handling of an empty input sentence, expecting all fields to be assigned "N/A".
+
+5. **Only Identifier**: Tests the parser's handling of input with only the sentence identifier (no data fields) and expects all fields to be "N/A".
+
+6. **Missing Fields**: Verifies the parser's ability to handle input with missing fields and expects all fields to be "N/A".
+
+7. **Incorrect Data Format**: Ensures the parser handles input with unexpected data format by discarding the sentence and setting all fields to "N/A".
+
+8. **Incorrect Checksum**: Verifies the parser discards sentences with incorrect checksums and sets all fields to "N/A".
+
+9. **Out of Range Latitude and Longitude Values**: Tests how the parser handles input with latitude and longitude values out of valid range, expecting "N/A" for those fields.
+
+10. **Invalid Packet Format**: Tests the parser's handling of invalid packet format, expecting all fields to be "N/A".
+
+11. **Corrupted Data**: Verifies the parser discards sentences with corrupted data and sets all fields to "N/A".
+
+12. **Sentence with Excessive Length**: Tests the parser's handling of input sentences that exceed the expected length, expecting all fields to be "N/A".
+
+### Project Layout:
+
+Below is a diagram that illustrates the structure of the project:
+
+```plaintext
+gps_data_parsing_library/
+├── Binaries/
+├── Archives/
+├── build/
+├── components/
+│   └── gps_data_parser_folder/
+│       ├── include/
+│       │   └── gps_data_parser.h
+│       ├── src/
+│       │   └── gps_data_parser.c
+│       ├── test/
+│       │   └── test_gps_data_parser.c
+│       └── CMakeLists.txt
+├── main/
+│   ├── main.c
+│   ├── CMakeLists.txt
+│   └── kconfigproj
+├── test/
+│   ├── build/
+│   ├── main/
+│   │   └── test.c
+│   └── CMakeLists.txt
+├── sdkconfig
+├── README.md
+├── LICENSE
+└── CMakeLists.txt
+```
+
+### Root Directory
+
+- **Binaries/**: Contains firmware and other binary files.
+- **Archives/**: Contains archived files.
+- **build/**: Build output files (object files, binaries).
+- **components/**: Contains various components of the project, including:
+    - **gps_data_parser_folder/**
+        - **include/**: Header files (.h).
+        - **src/**: Source files (.c).
+        - **test/**: Test cases and test scripts.
+        - **CMakeLists.txt**: CMake build script for the `gps_data_parser_folder` component.
+- **main/**: Contains the main source code and build script:
+    - **main.c**: Main source code file.
+    - **CMakeLists.txt**: CMake build script for the `main` folder.
+    - **kconfigproj**: Kconfig project configuration file.
+- **test/**: Contains test-related directories and files:
+    - **build/**: Build output for tests.
+    - **main/**: Main test directory containing test scripts.
+    - **test.c**: Test cases file.
+    - **CMakeLists.txt**: CMake build script for the `test` folder.
+- **sdkconfig**: SDK configuration file.
+- **README.md**: This README file.
+- **LICENSE**: License file for the project.
+- **CMakeLists.txt**: Root-level CMake build script.
+
