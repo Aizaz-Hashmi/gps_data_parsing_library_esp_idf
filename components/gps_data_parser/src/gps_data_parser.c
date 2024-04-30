@@ -154,24 +154,26 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
     	             	  ESP_LOGE(TAG, "Invalid CheckSum");
     	             	  // The checksum is invalid, so return default GPS data
     	             	  print_default_value(&gps_data);
-
+    	             	  return gps_data;
     	             	}
 
 
-    	             	}
+    	     }
     	      else
     	      {
-    	    	 ESP_LOGE(TAG, "Invalid NMEA 0183 Sentence");
-    	     	 // The sentence format is not according to GPGGA sentence, so return default GPS data
+    	    	  ESP_LOGE(TAG, "Invalid NMEA 0183 Sentence");
+    	     	  // The sentence format is not according to GPGGA sentence, so return default GPS data
 
     	    	  print_default_value(&gps_data);
+    	    	  return gps_data;
     	      }
     }
     else
     {    ESP_LOGE(TAG, "Invalid Input String");
     	 // The stream is invalid (either NULL or empty), so return default GPS data
     	 //use sprintf function to store string to give parameters as string
-    	print_default_value(&gps_data);
+    	 print_default_value(&gps_data);
+    	 return gps_data;
     }
 
 

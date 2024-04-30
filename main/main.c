@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
+
 #include <esp_log.h>
 #include "gps_data_parser.h"
 
@@ -30,6 +31,7 @@ void test(const char * stream, int stream_num);
  */
 int app_main() {
 
+
 	while(1) {
 
 	// using test cases
@@ -37,7 +39,7 @@ int app_main() {
     test(stream1,1);
     sleep(1);//1 second delay using POSIX API
 
-    const char *stream2 = "$GPGGA,002153.000,1585.7149,N,07737.2052,E,1,4,5.57,333.2,M,-88.5,M,,*6F\r\n";// pure GPGGA sentence with CRLF
+    const char *stream2 = "$GPGGA,002153.000,1585.7149,N,07737.2052,E,1,4,5.57,333.2,M,-88.5,M,,*70\r\n";// pure GPGGA sentence with CRLF
     test(stream2,2);
     sleep(1);
 

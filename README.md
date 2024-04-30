@@ -144,3 +144,18 @@ In the main parsing block, the code processes the parsed fields from a GGA sente
   may not send all data parameters data due to some reasons ,the library function will assume it is valid data but to avoid getting wrong values as discussed earlier, the function 
   first counts number of fields which are 15 for GGA and then parses each field to check if any of the required field is empty, or has invalid characters, it will simply fill the 
   struct data paramters with the preferred string. I chose "N/A" but it can be set to any value to let the user know that it is not actual value.
+
+### Addition of  Unit Testing
+To incorporate target-based tests for testing this library , we can create a central unit test application running on the ESP32. 
+  These tests use the  **`Unity unit test framework`** and can be integrated into an  the `gps_data_parser` library component by adding them to the component's `test` subdirectory.
+  It verifies if the developed library remains robust and well-tested as you develop and integrate new features.
+  
+- Creation of `test` subdirectory in `components/gps_data_parser`. The `gps_data_parser/test`has
+` test_gps_data_parser.c` file, `CMakeLists.txt`file in which type `gps_data_parser` in front of  **`REQUIRES`** section and `untiy` in front of **`PRIV_REQUIRES`** part. Third file is `component.mk` file which is Makefile to instruct linker to achieve unit testing.
+- `test_gps_data_parser.c` has all test cases ranging from NORMAL TEST CASES to challenging edge cases to test this library's reliabilty.
+- To make use of these test cases written in the library subdirectory test folder, it is better to run them alone without merging the application code in `main.c` file in `main` folder in root directory.So, a new program entry point si required which is achieved by creating a test folder in the root directory.
+- `test` folder has two subfolders `main` and `build`. 
+- `test` folder has `CMakeLists.txt` file and `sdkconfig`file.
+-  In `ESP-IDF Termianl`goto test root directory by typing the `cd project/test` use `idf.py build` to build all the files that are to be built. use `idf.py -p COMx flash monitor` to see test results as PASS or FAIL and in `test/main/gps_data_parsing_library_test.c` it has `unity.h`  header file which is necessary to use run our tests. UNIT TEST is a frame wrork provided by UNITY. Most of its files are in `assembly` because they directly communicate with target hardware.
+-  use `unity_run_menu` to run the test cases in the form of a menu and it is upto you which test you want to run and see results.
+-  If all tests results are PASS then library can be considerd reliable with no loop holes.

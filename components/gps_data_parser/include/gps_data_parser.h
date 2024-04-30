@@ -23,16 +23,16 @@
  * and DDDMM.MMMM format for longitude), and altitude is above sea level in meters.
  */
 typedef struct {
-    /** Time in HHMMSS.SSS format */
+    // Time in HHMMSS.SSS format
     char time[13];
 
-    /** Latitude in DDMM.MMMM format */
+    // Latitude in DDMM.MMMM format
     char latitude[15];
 
-    /** Longitude in DDDMM.MMMM format */
+    // Longitude in DDDMM.MMMM format
     char longitude[15];
 
-    /** Altitude above sea level in meters */
+    // Altitude above sea level in meters
     char altitude[12];
 } gps_data_parse_t;
 
