@@ -133,5 +133,14 @@ In the main parsing block, the code processes the parsed fields from a GGA sente
 - This function checks if the input character is a valid compass direction (N, S, E, or W).
 - It returns `1` if the direction is valid, otherwise it returns `0`.
 
-
-
+### Calling `gps_data_parser` library function to test library in main.c file
+- Running multiple types of strings packets from invalid strings to valid NMEA 0183 GPGGA Sentences
+- Checking how library function handles input packets corrupted due to noise, interference, hardware, and firmware issues
+- If string is NULL or empty, to save power and processing , it is discarded at first phase
+- If String has some data, it is checked to see if it is a valid NMEA Sentence
+- If it is NMEA sentence then it is evaluated for checksum and is discarded if checksum is invalid
+- If Checksum is valid, then it is parsed where actual processing occurs, where required data parameter is extracted as raw and processed to get actual values.
+- If Checksum is valid when there is corruption in data before Checksum is performed by GPS module,or GPS module calcultes checksum after fetching data from Satellite and satellite 
+  may not send all data parameters data due to some reasons ,the library function will assume it is valid data but to avoid getting wrong values as discussed earlier, the function 
+  first counts number of fields which are 15 for GGA and then parses each field to check if any of the required field is empty, or has invalid characters, it will simply fill the 
+  struct data paramters with the preferred string. I chose "N/A" but it can be set to any value to let the user know that it is not actual value.

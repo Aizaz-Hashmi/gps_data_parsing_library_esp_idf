@@ -13,8 +13,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include <esp_log.h>
+
 #include "gps_data_parser.h"
 
+#define TAG "ERROR"
 static int s_crfl = 0;// static variable to hold index of \r\n in valid GPGGA sentence
 
 static int check_stream_validity(const char *uart_stream);
@@ -30,6 +33,8 @@ static int is_valid_time(const char *time);
 static int is_valid_numeric(const char *str,int expected_length);
 
 static int is_valid_altitude(const char *str);
+
+static void print_default_value(gps_data_parse_t* data);
 /**
  * @brief Parses a UART stream to extract GPS data.
  *
@@ -38,10 +43,10 @@ static int is_valid_altitude(const char *str);
  */
 gps_data_parse_t gps_data_parser(const char * uart_stream)
 {
-    gps_data_parse_t gps_data;
 
+	gps_data_parse_t gps_data;
     // Check if the UART stream is valid
-    if (!(check_stream_validity(uart_stream)))
+    if (!(check_stream_validity(uart_stream)) && (uart_stream[0] != '\0'))
     {
          // process stream if it is not null or empty
     	 int index = gga_sentence_format_validity_check(uart_stream);
@@ -55,7 +60,9 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
     	    	  strncpy(temp, uart_stream + index, length);   // Copy portion of uart_stream to temp
     	          temp[length] = '\0';  					   // Ensure null termination
     	          int x = check_sum_evaluation(temp);       // calling checksum function to check integrity of data in GPGGA sentence
+
     	             	if (x == 1) {
+
 
     	             		// Array to hold pointers to each field
     	             		char *fields[15];
@@ -88,6 +95,7 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
     	             		}
 
     	            		if (field_count == 15) {
+
     	            		    // Extract and format the time
     	            		    if (!is_valid_time(fields[1])) {
     	            		        // If the time field is invalid, print "N/A"
@@ -141,28 +149,29 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
     	            		    }
     	            		}
     	            	}
+    	             	else
+    	             	{
+    	             	  ESP_LOGE(TAG, "Invalid CheckSum");
+    	             	  // The checksum is invalid, so return default GPS data
+    	             	  print_default_value(&gps_data);
+
+    	             	}
 
 
     	             	}
     	      else
     	      {
-
+    	    	 ESP_LOGE(TAG, "Invalid NMEA 0183 Sentence");
     	     	 // The sentence format is not according to GPGGA sentence, so return default GPS data
 
-    	     	  sprintf(gps_data.time, "N/A");
-    	     	  sprintf(gps_data.latitude, "N/A");   // here any string can be added as per preference like empty string or zeros
-    	     	  sprintf(gps_data.longitude, "N/A");
-    	     	  sprintf(gps_data.altitude, "N/A");
+    	    	  print_default_value(&gps_data);
     	      }
     }
     else
-    {
+    {    ESP_LOGE(TAG, "Invalid Input String");
     	 // The stream is invalid (either NULL or empty), so return default GPS data
     	 //use sprintf function to store string to give parameters as string
-    	  sprintf(gps_data.time, "N/A");
-    	  sprintf(gps_data.latitude, "N/A");   // here any string can be added as per preference like empty string or zeros
-    	  sprintf(gps_data.longitude, "N/A");
-    	  sprintf(gps_data.altitude, "N/A");
+    	print_default_value(&gps_data);
     }
 
 
@@ -179,7 +188,7 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
  */
 int check_stream_validity(const char *uart_stream)
 {
-	return (uart_stream == NULL) ? 1 : 0; // Return 1 if the stream is NULL, otherwise return 0
+	return (uart_stream == NULL) ? 1 : 0; // Return 1 if the stream is NULL,empty  otherwise return 0
 }
 /**
  * @brief Checks the validity of format of NMEA string.
@@ -332,31 +341,47 @@ int check_sum_evaluation(const char *sentence) {
   * @return int Returns 1 if the string is a valid altitude, 0 otherwise.
   */
 
- static int is_valid_altitude(const char *str)
-{
-	 // Initialize variable to track the number of dots
-	     int dot_count = 0;
-	     // Iterate through the string
-	     while (*str) {
-	         // Check if the current character is not a digit
-	         if (!isdigit((int)*str)) {
-	             // Check if the character is a dot and if no dot has been found yet
-	             if (*str == '.' && dot_count == 0) {
 
-	                 dot_count++;
-	             } else {
-	                 // If the character is neither a digit nor a valid dot, return 0 (invalid)
-	                 return 0;
-	             }
-	         }
+/**
+ * @brief Checks if the given string represents a valid altitude.
+ *
+ * The function checks if the string contains only one dot (.) and digits.
+ * It also returns 0 if the altitude field is empty.
+ *
+ * @param str The input string representing altitude.
+ * @return int Returns 1 if the string is valid, 0 otherwise.
+ */
+static int is_valid_altitude(const char *str) {
+    // Initialize variable to track the number of dots
+    int dot_count = 0;
 
-	         // Move to the next character
-	         str++;
-	     }
-	   // Return 1 if all characters are valid and length is correct
-	     return 1;
+    // Check if the input string is empty
+    if (*str == '\0') {
+        return 0; // Return 0 if the altitude field is empty
+    }
 
+    // Iterate through the string
+    while (*str) {
+        // Check if the current character is not a digit
+        if (!isdigit((int)*str)) {
+            // Check if the character is a dot and if no dot has been found yet
+            if (*str == '.' && dot_count == 0) {
+                dot_count++;
+            } else {
+                // If the character is neither a digit nor a valid dot, return 0 (invalid)
+                return 0;
+            }
+        }
+
+        // Move to the next character
+        str++;
+    }
+
+    // Return 1 if all characters are valid and there is at most one dot
+    return 1;
 }
+
+
 
 
  // Function to validate a time field in HHMMSS.SSS format
@@ -376,6 +401,26 @@ int check_sum_evaluation(const char *sentence) {
      return (direction == 'N' || direction == 'S' || direction == 'E' || direction == 'W');
 }
 
+#include <string.h>  // Include this for strncpy
+
+// Function to set default values for gps_data_parse_t structure
+void print_default_value(gps_data_parse_t* data) {
+    // Check if data is not NULL
+    if (data != NULL) {
+        // Use strncpy to avoid buffer overflow
+        strncpy(data->time, "N/A", sizeof(data->time) - 1);
+        data->time[sizeof(data->time) - 1] = '\0';  // Ensure null-termination
+
+        strncpy(data->latitude, "N/A", sizeof(data->latitude) - 1);
+        data->latitude[sizeof(data->latitude) - 1] = '\0';  // Ensure null-termination
+
+        strncpy(data->longitude, "N/A", sizeof(data->longitude) - 1);
+        data->longitude[sizeof(data->longitude) - 1] = '\0';  // Ensure null-termination
+
+        strncpy(data->altitude, "N/A", sizeof(data->altitude) - 1);
+        data->altitude[sizeof(data->altitude) - 1] = '\0';  // Ensure null-termination
+    }
+}
 
 
 
