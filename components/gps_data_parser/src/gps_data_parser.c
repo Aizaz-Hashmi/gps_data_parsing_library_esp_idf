@@ -46,7 +46,7 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
 
 	gps_data_parse_t gps_data;
     // Check if the UART stream is valid
-    if (!(check_stream_validity(uart_stream)) && (uart_stream[0] != '\0'))
+    if (!(check_stream_validity(uart_stream)))
     {
          // process stream if it is not null or empty
     	 int index = gga_sentence_format_validity_check(uart_stream);
@@ -189,8 +189,11 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
  * @return Returns 1 if the stream is invalid (NULL or empty), otherwise 0.
  */
 int check_stream_validity(const char *uart_stream)
-{
-	return (uart_stream == NULL) ? 1 : 0; // Return 1 if the stream is NULL,empty  otherwise return 0
+{      
+       if((uart_stream == NULL) || (uart_stream[0] == '\0'))
+	return 1; // Return 1 if the stream is NULL or empty  else return 0
+       else
+	return 0;
 }
 /**
  * @brief Checks the validity of format of NMEA string.
