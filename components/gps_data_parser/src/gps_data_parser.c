@@ -190,10 +190,7 @@ gps_data_parse_t gps_data_parser(const char * uart_stream)
  */
 int check_stream_validity(const char *uart_stream)
 {      
-       if((uart_stream == NULL) || (uart_stream[0] == '\0'))
-	return 1; // Return 1 if the stream is NULL or empty  else return 0
-       else
-	return 0;
+     return ((uart_stream == NULL )|| (uart_stream[0] == '\0')) ? 1 : 0; // Return 1 if the stream is NULL or empty  otherwise return 0
 }
 /**
  * @brief Checks the validity of format of NMEA string.
@@ -201,61 +198,28 @@ int check_stream_validity(const char *uart_stream)
  * @param uart_stream The UART stream to check.
  * @return Returns starting index of $GPGGA sentence if it finds GGA sentence and also it finds CRLF at end of GGA sentence and no $ in between which can occurs if there is power instability to GPS module,otherwise it returns -1 if not valid GGA sentence format.
  */
-int gga_sentence_format_validity_check (const char *uart_stream)
-{
-
-    int size = strlen(uart_stream); // Calculate the length of the stream
-
-
-    char temp[size+1];             // Allocate a temporary buffer to store the sentence
-
-    int i;                         // Copy the input stream to temp array
-    for ( i = 0; i < size; i++) {
-        temp[i] = uart_stream[i];
+int gga_sentence_format_validity_check(const char *uart_stream) {
+     
+    const char *substring_gga = strstr(uart_stream, "$GPGGA,"); // Check if the substring "$GPGGA," is found
+    if (substring_gga == NULL) {
+        printf("Error: GGA sentence not found in uart_stream.\n");
+        return -1;
     }
-    temp[size] = '\0'; 			   // Null terminate the copied string
 
-    for (i = 0; i <= size - 6; i++) {
-    		 // Check if the substring matches "$GPGGA,"
-    	if (temp[i] == '$' && temp[i + 1] == 'G' && temp[i + 2] == 'P' &&
-					temp[i + 3] == 'G' && temp[i + 4] == 'G' && temp[i + 5] == 'A' &&  temp[i+6] == ',') {
-
-    		 // Once "$GPGGA," is found, search for "\r\n" in the rest of the string
-        int j = i + 7;
-        int found_rn = 0;
-        int has_dollar = 0;
-             s_crfl =0;
-        while (j < size - 1) {
-            // Check for the "\r\n" sequence
-            if (temp[j] == '\r' && temp[j + 1] == '\n') {
-                found_rn = 1;
-
-                break;
-            }
-            if (temp[j] == '$') {
-                          has_dollar = 1;
-                          break;
-            }
-           // If a dollar sign is found in between, restart the search from the position after the dollar sign
-             if (has_dollar) {
-                        i = j;  // Update `i` to restart the search after the position where the dollar sign was found
-                        continue;
-             }
-
-            j++;
-        }
-
-        // If "\r\n" is found without a dollar sign between "$GPGGA" and "\r\n"
-        if (found_rn && !has_dollar) {
-            // Return the index of "$GPGGA"
-            s_crfl =j;
-            return i;
-        }
+    // Move past "$GPGGA," and check for "\r\n"
+    const char *rn_string = strstr(substring_gga + 14, "\r\n"); // move 14 characters(commas) in such a case where all fields are empty
+    if (rn_string == NULL) {
+        printf("Error: Expected \\r\\n not found after GGA sentence.\n");
+        return -1;
     }
-    }
-    return -1; // Return -1 if the GGA sentence is not found
+    int  gga_pos =(substring_gga-uart_stream);
+	s_crfl = (rn_string -uart_stream); //position at which \r\n starts
+    // optionally, Print the GGA sentence
+   // printf("GGA sentence found: %.*s\n", (int)(rn_string - substring_gga + 2), substring_gga); 
+   // printf("length of gga sentence is: %d\n",(rn_string-substring_gga));
+
+    return gga_pos; // Return index at which $GPGGA starts
 }
-
 /**
  * @brief Evaluates the checksum of an NMEA sentence.
  *
