@@ -19,10 +19,10 @@
  * @brief Structure to store GPS time.
  */
 typedef struct {
-    uint8_t hour;      /*!< Hour (00-23) */
-    uint8_t minute;    /*!< Minute (00-59) */
-    uint8_t second;    /*!< Second (00-59) */
-    uint16_t thousand; /*!< Thousandths of a second (000-999) */
+    uint8_t hour;      // Hour (00-23) 
+    uint8_t minute;    // Minute (00-59) 
+    uint8_t second;    // Second (00-59) 
+    uint16_t millisecond; // Thousandth's of a second (000-999) 
 } gps_time_t;
 
 /**
@@ -32,7 +32,7 @@ typedef struct {
  * latitude, longitude, altitude, fix quality, number of satellites, HDOP, and geoid height.
  * The time is in the HHMMSS.SSS format, latitude and longitude are in degrees and minutes 
  * (DDMM.MMMM format for latitude and DDDMM.MMMM format for longitude), altitude and geoid 
- * height are above sea level in meters, and fix quality, number of satellites, and HDOP 
+ * height are above sea level in meters, and fix quality, number of satellites, differential age,station ID and HDOP
  * are also provided.
  */
 typedef struct {
@@ -51,26 +51,32 @@ typedef struct {
     // Longitude direction (E/W)
     char lon_direction;
 
-    // Fix quality (0 = invalid, 1 = GPS fix, 2 = DGPS fix)
+    // Fix quality (0 = invalid, 1 = GPS fix, 2 = DGPS fix, 3 = Precise Positioning Service,4 =RTK Integer,5 = RTK Float, 6 = Dead Reckoning)
     int fix_quality;
 
-    // Number of satellites being tracked , Range is 0 to 12
+    // Number of satellites being tracked
     int num_satellites;
 
-    // Horizontal Dilution of Precision (indicating the accuracy of a GPS receiver's horizontal position (latitude and longitude)) Lower value means more accuracy.
+    // Horizontal Dilution of Precision
     float hdop;
 
     // Altitude above sea level in meters
     float altitude;
 
-    // Units of altitude (M)
+    // Units of altitude (M) in meters
     char altitude_units;
 
     // Geoid separation (difference between WGS-84 earth ellipsoid and mean sea level)
     float geoid_height;
 
-    // Units of geoid separation (M)
+    // Units of geoid separation (M) in meters
     char geoid_height_units;
+    
+    // Age of differential GPS data (seconds), range from 0 to 99
+    float dgps_age;
+
+    // Differential reference station ID (numeric), range from 0 to 1023
+    int dgps_station_id;
 
 } gps_data_parse_t;
 
@@ -88,4 +94,5 @@ typedef struct {
  */
 gps_data_parse_t* gps_data_parser(const char * uart_stream);
 
+typedef gps_data_parse_t* gps_handle // handle name for GPS object
 #endif  // GPS_DATA_PARSER_H
