@@ -27,18 +27,16 @@ The `gps_data_parser` component processes GPS data packets received via UART, ex
 
 ### `gps_data_parser` Function Definition
 
-The `gps_data_parser`  function is responsible for parsing GPS data packets received via UART, specifically focusing on GGA sentences. This function processes the input stream and extracts relevant GPS data such as time, latitude, longitude, and altitude.
+The `gps_data_parser`  function is responsible for parsing GPS data packets received via UART, for GGA sentences. This function processes the input stream and extracts all GPS  GGA sentence data fields such as time, latitude, longitude, and altitude and so on.
 
 #### Step 1: Input Validation
 
 Upon receiving an input string (`uart_stream`), the function first validates the input using the `check_stream_validity` function. This function checks whether the input is either `NULL` or contains ASCII data.
 
-- If the input stream is invalid (i.e., `NULL`), the function will return default values for `time`, `longitude`, `latitude`, and `altitude` (such as "N/A" or zero), depending on your preference.
+- If the input stream is invalid (i.e., `NULL`), the function will return default values for `time`, `longitude`, `latitude`, and `altitude` (such as -1, any character symbol or zero), depending on your preference.
 - By verifying the input early and returning default values if necessary, the function handles invalid input gracefully, ensuring predictable behavior even in the presence of invalid input.
 
 #### Step 2: GPGGA Sentence Validation
-
-Here is the information formatted as requested:
 
 Checking Stream Validity and Extracting GGA Sentence
 Upon receiving an input UART stream, the function checks if the stream is valid and contains a valid GGA sentence using the function `gga_sentence_format_validity_check`.
@@ -51,7 +49,7 @@ Processing and Handling Default Values
 - Parsing logic can be added to process the extracted GGA sentence from the temporary buffer.
 
 ##### 3. Handling Invalid Stream:
-- If no valid GGA sentence is found or the UART stream is invalid, the function initializes the gps_data variable with default values such as "N/A".
+- If no valid GGA sentence is found or the UART stream is invalid, the function initializes the gps_data variable with default values such as -1 or 0 etc.
 
 #### Step 3: checksum verification for data integrity
 This process ensures that the data packet has not been corrupted during transmission and that the GPS data can be trusted for further processing. Implementing checksum evaluation verification is crucial for maintaining the reliability of GPS data parsing in your application.
