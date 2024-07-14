@@ -15,6 +15,10 @@
 
 #include <stdint.h>
 
+// Define USE_FEET_UNIT as 1 to convert altitude,Geoid separation to feet, and set it to 0 to use meter as unit
+#define USE_FEET_UNIT 0
+ 
+
 /**
  * @brief Structure to store GPS time.
  */
@@ -80,7 +84,7 @@ typedef struct {
 
 } gps_data_parse_t;
 
-
+typedef gps_data_parse_t*  gps_gga_handle_t;// create gps handle variable for gga sentence
 /**
  * @brief  Declaration of function to Parse GPS data from a UART stream.
  *
@@ -94,5 +98,4 @@ typedef struct {
  */
 gps_data_parse_t* gps_data_parser(const char * uart_stream);
 
-typedef gps_data_parse_t* gps_handle // handle name for GPS object
 #endif  // GPS_DATA_PARSER_H
