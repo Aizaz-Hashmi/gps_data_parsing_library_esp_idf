@@ -6,35 +6,33 @@
  *
  * Created on: 28-Apr-2024
  * Author: Aizaz Ubaid Hashmi
- */
-
+ */  
+  
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-
+  
 #include <esp_log.h>
-
 #include "gps_data_parser.h"
-
+  
 #define TAG "ERROR"
-static int s_crfl = 0;// static variable to hold index of \r\n in valid GPGGA sentence
+#define TIME_ZONE 5				//Pakistan standard Time UTC+5
+#define Buffer_size 1024                // for dynamic memory allocation. You can vary it as per your code requirements
 
-static int check_stream_validity(const char *uart_stream);
+static int s_crfl = 0;			// static variable to hold index of \r\n in valid GPGGA sentence
+static char *fields[15];		// Array of 15 strings to hold data of every field of GPGGA sentence
+static int check_stream_validity (const char *uart_stream);
+static int gga_sentence_format_validity_check (const char *uart_stream);
+static int check_sum_evaluation (const char *sentence);
+static int is_valid_time (const char *time);
+static int is_valid_numeric (const char *str, int expected_length);
+static int is_valid_number (const char *str);                   // function to check if a given string has all numeric characters and is postive or negative number
+static void print_default_value (gps_data_parse_t * data);	// function to print default values in case there are issues in uart stream
+static void utc_time_parser (gps_data_parse_t * gps_time);	// function to parse time in utc format 
+static float longitude_latitude_parser (const char *str);	// function to parse latitude and longitude in degrees
+void gps_fix_quality_description (int gps_quality_fix);	//public function to tell GPS fix quality
 
-static int gga_sentence_format_validity_check(const char *uart_stream);
-
-static int check_sum_evaluation(const char *sentence);
-
-static int is_valid_direction(char direction);
-
-static int is_valid_time(const char *time);
-
-static int is_valid_numeric(const char *str,int expected_length);
-
-static int is_valid_altitude(const char *str);
-
-static void print_default_value(gps_data_parse_t* data);
 /**
  * @brief Parses a UART stream to extract GPS data.
  *
