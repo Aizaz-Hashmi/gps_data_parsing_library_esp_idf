@@ -31,7 +31,7 @@ The `gps_data_parser`  function is responsible for parsing GPS data packets rece
 
 #### Step 1: Input Validation
 
-Upon receiving an input string (`uart_stream`), the function first validates the input using the `check_stream_validity` function. This function checks whether the input is either `NULL` or contains ASCII data.
+Upon receiving an input string (`uart_stream`), the function first validates the input using the `check_stream_NULL_Empty` function. This function checks whether the input is either `NULL` or contains ASCII data.
 
 - If the input stream is invalid (i.e., `NULL`), the function will return default values for `time`, `longitude`, `latitude`, and `altitude` (such as -1, any character symbol or zero), depending on your preference.
 - By verifying the input early and returning default values if necessary, the function handles invalid input gracefully, ensuring predictable behavior even in the presence of invalid input.
