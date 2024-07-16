@@ -118,5 +118,25 @@ typedef gps_data_parse_t*  gps_gga_handle_t;// create gps handle variable for gg
  * @return Parsed GPS data in a gps_data_parse_t structure.
  */
 gps_data_parse_t* gps_data_parser(const char * uart_stream);
+#define UNIT_TESTING_ENABLED 1  // Set to 1 to enable public functions for unit testing ONLY, 0 to disable
+
+// Conditional compilation based on UNIT_TESTING_ENABLED macro
+#if UNIT_TESTING_ENABLED
+#define PUBLIC_FOR_TESTING
+#else
+#define PUBLIC_FOR_TESTING static
+#endif
+
+// Public function declarations that must be used for unit tests 
+PUBLIC_FOR_TESTING int check_stream_NULL_Empty_public(const char *uart_stream);
+PUBLIC_FOR_TESTING int gga_sentence_format_validity_check_public(const char *uart_stream);
+PUBLIC_FOR_TESTING int check_sum_evaluation_public(const char *sentence);
+PUBLIC_FOR_TESTING int is_valid_time_public(const char *time);
+PUBLIC_FOR_TESTING int is_valid_numeric_public(const char *str, int expected_length);
+PUBLIC_FOR_TESTING int is_valid_number_public(const char *str);
+PUBLIC_FOR_TESTING void print_default_value_public(gps_data_parse_t *data);
+PUBLIC_FOR_TESTING void utc_time_parser_public(gps_data_parse_t *gps_time);
+PUBLIC_FOR_TESTING float longitude_latitude_parser_public(const char *str);
+PUBLIC_FOR_TESTING void gps_fix_quality_description_public(int gps_quality_fix);
 
 #endif  // GPS_DATA_PARSER_H
