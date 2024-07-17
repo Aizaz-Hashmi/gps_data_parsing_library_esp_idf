@@ -207,8 +207,8 @@ gps_data_parsing_library/
 │       └── CMakeLists.txt
 ├── main/
 │   ├── main.c
-│   ├── CMakeLists.txt
-│   └── kconfigproj
+│   └── CMakeLists.txt
+│   
 ├── test/
 │   ├── build/
 │   ├── main/
