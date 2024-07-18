@@ -18,7 +18,7 @@
   
 #define TAG "ERROR"
 #define TIME_ZONE 5			 //Pakistan Time UTC +05
-#define Buffer_size 1024
+#define Buffer_size 2048                 //set its size based on size of application code
 
 
 static int s_crfl = 0;			// static variable to hold index of \r\n in valid GPGGA sentence
@@ -290,7 +290,7 @@ gps_data_parse_t * gps_data_parser (const char *uart_stream)
     					{
     					    // If geoid height  field is invalid,empty then set any default value
     						gps_data->geoid_height = DEFAULT_GEOID_HEIGHT;
-    						printf("GEOIDAL SEPARATION field is invalid ,setting to default value of 0\n");
+    						//printf("GEOIDAL SEPARATION field is invalid ,setting to default value of 0\n");
     					}
     				  
                         else{
