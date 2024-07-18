@@ -4,7 +4,7 @@ A lightweight external library for ESP32, written in C/C++, using ESP-IDF v5.0 o
 
 ### GPS Data Parser Component
 
-The `gps_data_parser` component processes GPS data packets received via UART, extracting relevant information like time, latitude, longitude, and altitude. Its structure includes:
+The `gps_data_parser` component processes GPS data packets received via UART, extracting all data elements like time, latitude, longitude, and altitude,hdop,fix quality, number of satellites, geiod height, age of DGPS Its structure includes:
 
 - **`gps_data_parser.h`**: Declares function to parse GPS data and defines a structure for data parameters.
 - **`gps_data_parser.c`**: Implements functions to parse, validate, and process the NMEA sentence through UART stream.
@@ -27,13 +27,14 @@ The `gps_data_parser` component processes GPS data packets received via UART, ex
 
 ### `gps_data_parser` Function Definition
 
-The `gps_data_parser`  function is responsible for parsing GPS data packets received via UART, for GGA sentences. This function processes the input stream and extracts all GPS  GGA sentence data fields such as time, latitude, longitude, and altitude and so on.
+The `gps_data_parser` function is responsible for parsing GPS data packets received via UART, focusing on GGA sentences. This function processes the input stream and extracts vall  GPGGA  data fields such as time, latitude, longitude, and altitude etc.
 
+This function returns , a handle of type `gps_data_parse_t *` is. When a pointer object of this struct type is instantiated, it is assigned to a dynamically allocated memory location using the `malloc` function. It is crucial in application code to manage this dynamically allocated memory properly by freeing it using `free()` when it is no longer needed. Failure to do so can lead to memory leaks, where memory is allocated but never released, consuming system resources unnecessarily.
 #### Step 1: Input Validation
 
 Upon receiving an input string (`uart_stream`), the function first validates the input using the `check_stream_NULL_Empty` function. This function checks whether the input is either `NULL` or contains ASCII data.
 
-- If the input stream is invalid (i.e., `NULL`), the function will return default values for `time`, `longitude`, `latitude`, and `altitude` (such as -1, any character symbol or zero), depending on your preference.
+- If the input stream is invalid (i.e., `NULL`), the function will return default values for `time`, `longitude`, `latitude`, and `altitude` and all other elements (such as -1, any character symbol or zero), depending on your preference.Default values can be changed from `gps_data_parser.h` file.
 - By verifying the input early and returning default values if necessary, the function handles invalid input gracefully, ensuring predictable behavior even in the presence of invalid input.
 
 #### Step 2: GPGGA Sentence Validation
@@ -82,56 +83,90 @@ This code provides functions for parsing GPS data packets in NMEA format GGA sen
 
 In the main parsing block, the code processes the parsed fields from a GGA sentence:
 
-- **Time**: 
-    - The function starts by checking the time field (`fields[1]`) using `is_valid_time()`.
-    - If the time field is valid, the time is formatted as "HH:MM:SS.SSS" using `sprintf()` and stored in `gps_data.time`.
-    - If the time field is invalid, the function sets `gps_data.time` to "N/A" to indicate the absence of valid data.
+- **Time**:
+  - Extracts and formats the time from `fields[1]` into `gps_data->time` using UTC time parser. If invalid, defaults to `255` for hour and other default values for minute, second, and millisecond.
 
 - **Latitude**:
-    - The latitude value is obtained from `fields[2]` and its direction from `fields[3]`.
-    - The function checks if the latitude is valid and if the direction is a valid compass direction (N or S) using `is_valid_numeric()` and `is_valid_direction()`.
-    - If both latitude and direction are valid, the function converts the latitude from degrees/minutes to degrees and fractional minutes, then formats it as "DD MM.MMMM D" (e.g., "12 55.7174 N").
-    - The formatted latitude is stored in `gps_data.latitude`.
-    - If the latitude or direction is invalid, "N/A" is stored.
+  - Processes latitude from `fields[2]` using `longitude_latitude_parser`. If invalid, sets `gps_data->latitude` to `-9999`.
+
+- **Latitude Direction**:
+  - Validates and sets latitude direction (`N` or `S`) from `fields[3]`. Defaults to a specified character if invalid.
 
 - **Longitude**:
-    - The longitude value is obtained from `fields[4]` and its direction from `fields[5]`.
-    - Similar to latitude, the function validates longitude using `is_valid_numeric()` and `is_valid_direction()`.
-    - If both longitude and direction are valid, the function converts the longitude from degrees/minutes to degrees and fractional minutes, then formats it as "DDD MM.MMMM D" (e.g., "077 37.2052 E").
-    - The formatted longitude is stored in `gps_data.longitude`.
-    - If the longitude or direction is invalid, "N/A" is stored.
+  - Processes longitude from `fields[4]` using `longitude_latitude_parser`. If invalid, sets `gps_data->longitude` to `0`.
+
+- **Longitude Direction**:
+  - Validates and sets longitude direction (`E` or `W`) from `fields[5]`. Defaults to `-` if invalid.
+
+- **Fix Quality**:
+  - Parses and sets fix quality from `fields[6]`. If invalid, defaults to `-1`.
+
+- **Number of Satellites**:
+  - Parses and sets the number of satellites from `fields[7]`. If invalid, defaults to `-1`.
+
+- **Horizontal Dilution of Precision (HDOP)**:
+  - Parses and sets HDOP from `fields[8]`. If invalid, defaults to `-1`.
 
 - **Altitude**:
-    - The altitude value is obtained from `fields[9]` and its unit (e.g., meters) from `fields[10]`.
-    - The function checks if the altitude is valid using `is_valid_altitude()` and if the unit field contains a valid character.
-    - If the altitude and unit are valid, the function formats the altitude as "###.# U" (e.g., "333.2 M").
-    - The formatted altitude is stored in `gps_data.altitude`.
-    - If the altitude or unit is invalid, "N/A" is stored.
+  - Parses and sets mean sea level altitude from `fields[9]`. If invalid, defaults to `-999999`.
+
+- **Altitude Units**:
+  - Validates and sets altitude units (`M` for meters) from `fields[10]`. Defaults to `-` if invalid. Converts altitude to feet if `USE_FEET_UNIT` is enabled.
+
+- **Geoid Height**:
+  - Parses and sets geoid height from `fields[11]`. If invalid, defaults to `0`.
+
+- **Geoid Height Units**:
+  - Validates and sets geoid height units (`M` for meters) from `fields[12]`. Defaults to `-` if invalid. Converts geoid height to feet if `USE_FEET_UNIT` is enabled.
+
+- **Differential GPS Age**:
+  - Parses and sets differential GPS age from `fields[13]`. If invalid, defaults to a specified default value.
+
+- **Differential GPS Station ID**:
+  - Parses and sets differential GPS station ID from `fields[14]`. If invalid, defaults to a specified default value.
+
 
 ### Function Definitions
 
-#### `is_valid_numeric(const char *str, int expected_length)`
-- This function checks if a given string consists only of digits and at most one dot (.), and whether its length matches the expected length.
-- The function iterates through each character in the input string (`str`).
-- If a dot is encountered, it checks if it is the first dot encountered. If not, the function returns `0` (invalid).
-- The function counts the length of the string, and if it doesn't match `expected_length`, it returns `0` (invalid).
-- If all checks pass, it returns `1` (valid).
+1. **`static int check_stream_NULL_Empty(const char * uart_stream)`**
+   - Checks if `uart_stream` is `NULL` or empty.
+   - Returns `1` if `uart_stream` is `NULL` or empty, otherwise `0`.
 
-#### `is_valid_altitude(const char *str)`
-- This function validates an altitude string, checking that it contains only digits and at most one dot (.).
-- Similar to `is_valid_numeric()`, it iterates through the string and verifies the content.
-- It returns `1` if the string is valid and `0` if not.
+2. **`static int gga_sentence_format_validity_check (const char *uart_stream)`**
+   - Checks the validity of the GGA sentence format in `uart_stream`.
+   - Returns `1` if the format is valid, otherwise `0`.
 
-#### `is_valid_time(const char *time)`
-- This function validates a time string in the "HHMMSS.SSS" format.
-- It checks each character of the string, ensuring that all but the sixth character (which should be a decimal point) are digits.
-- If the format is valid, it returns `1`, otherwise, it returns `0`.
+3. **`static int check_sum_evaluation (const char *sentence)`**
+   - Evaluates the checksum of the sentence `sentence`.
+   - Returns `1` if the checksum is valid, otherwise `0`.
 
-#### `is_valid_direction(char direction)`
-- This function checks if the input character is a valid compass direction (N, S, E, or W).
-- It returns `1` if the direction is valid, otherwise it returns `0`.
+4. **`static int is_valid_time (const char *time)`**
+   - Checks if `time` is a valid UTC time format.
+   - Returns `1` if `time` is valid, otherwise `0`.
 
-### Calling `gps_data_parser` library function to test library in main.c file
+5. **`static int is_valid_numeric (const char *str, int expected_length)`**
+   - Checks if `str` is a valid numeric string of `expected_length`.
+   - Returns `1` if `str` is valid, otherwise `0`.
+
+6. **`static int is_valid_number (const char *str)`**
+   - Checks if `str` represents a valid numeric value.
+   - Returns `1` if `str` is a valid number, otherwise `0`.
+
+7. **`static void print_default_value (gps_data_parse_t * data)`**
+   - Prints default values for `data` in case of issues with the UART stream.
+
+8. **`static void utc_time_parser (gps_data_parse_t * gps_time)`**
+   - Parses UTC time format and sets it in `gps_time`.
+
+9. **`static float longitude_latitude_parser (const char *str)`**
+   - Parses `str` into latitude or longitude in degrees.
+   - Returns the parsed value as a `float`.
+
+10. **`void gps_fix_quality_description (int gps_quality_fix)`**
+    - Provides a description of GPS fix quality based on `gps_quality_fix`.
+
+
+### Calling `gps_data_parser` library function to test the library in main.c file
 - Running multiple types of strings packets from invalid strings to valid NMEA 0183 GPGGA Sentences
 - Checking how library function handles input packets corrupted due to noise, interference, hardware, and firmware issues
 - If string is NULL or empty, to save power and processing , it is discarded at first phase
@@ -141,7 +176,7 @@ In the main parsing block, the code processes the parsed fields from a GGA sente
 - If Checksum is valid when there is corruption in data before Checksum is performed by GPS module,or GPS module calcultes checksum after fetching data from Satellite and satellite 
   may not send all data parameters data due to some reasons ,the library function will assume it is valid data but to avoid getting wrong values as discussed earlier, the function 
   first counts number of fields which are 15 for GGA and then parses each field to check if any of the required field is empty, or has invalid characters, it will simply fill the 
-  struct data paramters with the preferred string. I chose "N/A" but it can be set to any value to let the user know that it is not actual value.
+  struct data paramters with the preferred string. I chose default but it can be set to any value to let the user know that it is not actual value.
 
 ### Addition of  Unit Testing
 To incorporate target-based tests for testing this library , we can create a central unit test application running on the ESP32. 
@@ -165,27 +200,38 @@ The project includes the following test cases:
 
 1. **Valid GPGGA Sentence**: Tests the parser's ability to handle a valid GPGGA packet and extract the expected GPS data fields.
 
-2. **Incorrect Sentence Identifier**: Verifies that the parser discards packets with invalid sentence identifiers and returns "N/A" for all fields.
+2. **Incorrect Sentence Identifier**: Verifies that the parser discards packets with invalid sentence identifiers and returns defaults for all fields.
+   
+3. **Empty Sentence**: Tests the parser's handling of an empty input sentence, expecting all fields to be assigned defaults.
 
-3. **GGA Sentence with Missing Parameters**: Ensures the parser can handle packets with missing fields and assigns "N/A" values to missing data.
+4. **Only Identifier**: Tests the parser's handling of input with only the sentence identifier (no data fields) and expects all fields to be defaults.
 
-4. **Empty Sentence**: Tests the parser's handling of an empty input sentence, expecting all fields to be assigned "N/A".
+5. **Missing Fields**: Verifies the parser's ability to handle input with missing fields and expects all fields to be defaults.
 
-5. **Only Identifier**: Tests the parser's handling of input with only the sentence identifier (no data fields) and expects all fields to be "N/A".
+6. **Incorrect Data Format**: Ensures the parser handles input with unexpected data format by discarding the sentence and setting all fields to defaults.
 
-6. **Missing Fields**: Verifies the parser's ability to handle input with missing fields and expects all fields to be "N/A".
+7. **Incorrect Checksum**: Verifies the parser discards sentences with incorrect checksums and sets all fields to defaults.
 
-7. **Incorrect Data Format**: Ensures the parser handles input with unexpected data format by discarding the sentence and setting all fields to "N/A".
+8. **Out of Range Latitude and Longitude Values**: Tests how the parser handles input with latitude and longitude values out of valid range, expecting default for those fields.
 
-8. **Incorrect Checksum**: Verifies the parser discards sentences with incorrect checksums and sets all fields to "N/A".
+9. **Invalid Packet Format**: Tests the parser's handling of invalid packet format, expecting all fields to be defaults.
 
-9. **Out of Range Latitude and Longitude Values**: Tests how the parser handles input with latitude and longitude values out of valid range, expecting "N/A" for those fields.
+10. **Corrupted Data**: Verifies the parser discards sentences with corrupted data and sets all fields to default.
 
-10. **Invalid Packet Format**: Tests the parser's handling of invalid packet format, expecting all fields to be "N/A".
+11. **Sentence with Excessive Length**: Tests the parser's handling of input sentences that exceed the expected length, expecting all fields to be default.
+12. **GPGGA Stream Empty or NULL**: Verifies handling of NULL or empty streams, expecting function to return 1, and 0 for non-empty streams.
 
-11. **Corrupted Data**: Verifies the parser discards sentences with corrupted data and sets all fields to "N/A".
+13. **GGA Sentence Format Validity Check**: Tests the validation of GGA sentence format, expecting proper handling of valid and invalid formats, including proper index returns for valid formats.
 
-12. **Sentence with Excessive Length**: Tests the parser's handling of input sentences that exceed the expected length, expecting all fields to be "N/A".
+14. **Checksum Evaluation**: Validates that the calculated checksum matches the expected checksum, returning 1 for matches.
+
+15. **Time Field Validity**: Checks the validity of time fields in the format HHMMSS.sss, expecting 1 for valid times and 0 for invalid times.
+
+16. **Numeric String Validation**: Verifies that strings consist only of digits, a decimal point, and optionally a negative sign, returning 1 for valid numeric strings and 0 for invalid ones.
+
+17. **Latitude and Longitude Format Check**: Tests the validity of latitude and longitude fields, expecting 1 for valid formats (4 digits for latitude, 5 digits for longitude) and 0 for invalid ones.
+
+18. **Latitude and Longitude Processor**: Ensures correct processing of latitude and longitude fields into degrees, expecting accurate conversion or 0.0 for empty or NULL fields.
 
 ### Project Layout:
 
