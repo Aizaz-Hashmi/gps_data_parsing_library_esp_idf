@@ -17,12 +17,12 @@
 #include "gps_data_parser.h"
   
 #define TAG "ERROR"
-#define TIME_ZONE 5			 //Pakistan Time UTC +5
+#define TIME_ZONE 5			 //Pakistan Time UTC +05
 #define Buffer_size 1024
 
 
 static int s_crfl = 0;			// static variable to hold index of \r\n in valid GPGGA sentence
-static char *fields[15];		// Array of pointers to each field of GGA sentence
+static char* fields[15];	// Array to hold pointers to each field
 
 static int check_stream_NULL_Empty(const char * uart_stream);
 static int gga_sentence_format_validity_check (const char *uart_stream);
@@ -42,8 +42,14 @@ void gps_fix_quality_description (int gps_quality_fix);	//public function to tel
  */ 
 gps_data_parse_t * gps_data_parser (const char *uart_stream)
 { 
-    gps_data_parse_t * gps_data = (gps_data_parse_t *) malloc (sizeof (gps_data_parse_t));	//dynamic memory allocation for structure members
-	// Check if the UART stream is valid
+    gps_data_parse_t * gps_data = (gps_data_parse_t *) malloc (sizeof(gps_data_parse_t)); //dynamic memory allocation for structure members
+    if(gps_data == NULL)
+    {printf("\nMemory Allocation for gps_data_parse_t structure failed\n");
+    return NULL;}
+    else
+     printf("\nMemory allocated successfully\n");
+    
+	// Check if the UART stream is NOT empty or Not NULL
 	if (!(check_stream_NULL_Empty (uart_stream))){
 	    
 		// Allocate memory for the UART stream buffer
@@ -154,8 +160,9 @@ gps_data_parse_t * gps_data_parser (const char *uart_stream)
     						  
      
                                 gps_data->lat_direction = fields[3][0];
-    						  
-                                gps_data->latitude *= -1;
+                                
+    						    if(gps_data->latitude != DEFAULT_LATITUDE)
+                                    gps_data->latitude *= -1;
     						}
     					  
      
@@ -191,7 +198,8 @@ gps_data_parse_t * gps_data_parser (const char *uart_stream)
     						{
     						  gps_data->lon_direction = fields[5][0];
     						  
-                              gps_data->longitude *= -1;
+    						  if(gps_data -> longitude != DEFAULT_LONGITUDE)
+                                gps_data->longitude *= -1;
     						}
     					    else{
     						  gps_data->lon_direction = fields[5][0];
@@ -415,6 +423,7 @@ int check_stream_NULL_Empty (const char *uart_stream)
  
 int gga_sentence_format_validity_check (const char *uart_stream)
 {
+
   const char *substring_gga = strstr (uart_stream, "$GPGGA,");	// Check if the substring "$GPGGA," is found
   if (substring_gga == NULL)
 	{
@@ -423,7 +432,7 @@ int gga_sentence_format_validity_check (const char *uart_stream)
 	}
   
   // Move past "$GPGGA," and check for "\r\n"
-  const char *rn_string = strstr (substring_gga + 14, "\r\n");	// move 14 characters(commas)  such a case where all fields are empty
+  const char *rn_string = strstr (substring_gga, "\r\n");
   if (rn_string == NULL)
 	{
 	  printf ("Error: Expected \\r\\n not found after GGA sentence.\n");
@@ -437,7 +446,6 @@ int gga_sentence_format_validity_check (const char *uart_stream)
     
     // printf ("length of gga sentence is: %d\n", (rn_string - substring_gga));
     
-    // free(temp); // Clean up allocated memory
 	return gga_pos;	// Return index at which $GPGGA starts
 }
 
@@ -497,7 +505,7 @@ int check_sum_evaluation (const char *sentence)
  */ 
 int is_valid_numeric (const char *str, int expected_length)
 {
-    if (str == NULL || str[0] == '\0')
+    if (str == NULL || str[0] == '\0') // return 0 if string is empty or NULL
 	    return 0;
     // Initialize variables to track the number of dots and the length of the string
     int dot_count = 0;
@@ -618,7 +626,9 @@ int is_valid_time (const char *time)
 // To check if given string is a number 
  
 int is_valid_number(const char *str)
-{
+{   
+    if(str == NULL)
+        return 0;
     int decimal_point_count = 0; // To count the number of decimal points
     int is_negative_allowed = (str == fields[9] || str == fields[11]); // Check if the field is altitude or geoid height
 
@@ -720,7 +730,8 @@ void utc_time_parser (gps_data_parse_t * gps_time)
 //Function to convert longitude and latitude into degrees 
  
 float longitude_latitude_parser (const char *str) 
-{ 
+{   if (str == NULL || str[0] == '\0' )
+        return 0.0;
     float x = strtof (str, NULL);
     int deg = ((int) x) / 100;
     float min = x - (deg * 100);
@@ -783,8 +794,57 @@ void gps_fix_quality_description (int gps_quality_fix)
 
 // these are wrapper around functions for local function in order to access them indirectly for unit tests
 
+int check_stream_NULL_Empty_public(const char *uart_stream)
+{
+    
+    return check_stream_NULL_Empty( uart_stream);
+    
+    
+    
+}
+
+int gga_sentence_format_validity_check_public(const char *uart_stream)
+{
+    return gga_sentence_format_validity_check(uart_stream);
+}
+ 
+ int check_sum_evaluation_public(const char *sentence)
+ {
+     
+     
+     return check_sum_evaluation(sentence);
+ }
+ 
+ int is_valid_time_public(const char *time)
+ {
+     return is_valid_time(time);
+ }
  
  
+ int is_valid_numeric_public(const char *str, int expected_length)
+ {
+     
+     
+     
+     return is_valid_numeric(str,expected_length);
+ }
+
+ 
+ int is_valid_number_public(const char *str)
+ {
+     
+     
+     
+     return is_valid_number(str);
+ }
  
  
+ float longitude_latitude_parser_public(const char *str)
+ {
+     
+     
+     return longitude_latitude_parser(str);
+ }
  
+ 
+
