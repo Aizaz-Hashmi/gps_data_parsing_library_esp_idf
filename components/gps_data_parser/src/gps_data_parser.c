@@ -18,7 +18,7 @@
   
 #define TAG "ERROR"
 #define TIME_ZONE 5			 //Pakistan Time UTC +05
-#define Buffer_size 2048                 //set its size based on size of application code
+#define Buffer_size 2048
 
 
 static int s_crfl = 0;			// static variable to hold index of \r\n in valid GPGGA sentence
@@ -43,9 +43,10 @@ void gps_fix_quality_description (int gps_quality_fix);	//public function to tel
 gps_data_parse_t * gps_data_parser (const char *uart_stream)
 { 
     gps_data_parse_t * gps_data = (gps_data_parse_t *) malloc (sizeof(gps_data_parse_t)); //dynamic memory allocation for structure members
-    if(gps_data == NULL)
-    {printf("\nMemory Allocation for gps_data_parse_t structure failed\n");
-    return NULL;}
+    if(gps_data == NULL){
+        printf("\nMemory Allocation for gps_data_parse_t structure failed\n");
+    return NULL;
+    }
     else
      printf("\nMemory allocated successfully\n");
     
@@ -57,10 +58,8 @@ gps_data_parse_t * gps_data_parser (const char *uart_stream)
 	  
  
         if (temp_buffer != NULL){
-            // if(strlen(temp_buffer) > strlen(uart_stream) + 300)
             // Copy the UART stream to the temporary buffer
 			strcpy (temp_buffer, uart_stream); 
-			//else: print insufficient memory please increase buffer size return NULL
             
         }
 	  
@@ -77,22 +76,18 @@ gps_data_parse_t * gps_data_parser (const char *uart_stream)
         if (index != -1)
 		{   // if NMEA sentence is a valid GPGGA sentence then execute this if block code
 		    unsigned int length = s_crfl - index;	// Calculate the length of the substring
-		    char temp[length + 1];// Allocate space for the substring plus null terminator
-		  
-		    // Copy the substring (GGA Sentence) from temp_buffer starting from index
-		    strncpy (temp, temp_buffer + index, length);
-		    temp[length] = '\0';	// Null-terminate the string
-		  
+		  memmove(temp_buffer, temp_buffer + index, length);            // Shift the substring to the start of the buffer
+            temp_buffer[length] = '\0';  
     	    // calling checksum function to check integrity of data in GPGGA sentence
     			
-    		if (check_sum_evaluation (temp)){
+    		if (check_sum_evaluation (temp_buffer)){
     			  
                 int field_count = 0; // Counter for number of fields found
     			  
     	    	// Initialize pointers for the start and end of each field
-    	    	char *start = temp;
+    	    	char *start = temp_buffer;
     			  
-                char *end = temp;
+                char *end = temp_buffer;
     			  
             	// Iterate through the string and find each field
     	    	while (*end != '\0')
